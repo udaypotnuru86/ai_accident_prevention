@@ -1,0 +1,1804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SurakshaAI — India Road Safety &amp; Accident Prevention Intelligence</title>
+  <meta name="description" content="AI-powered accident severity prediction, pan-India corridor analytics, and proactive road safety intelligence for Indian highways and urban corridors.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+
+  <style>
+    :root {
+      --bg-base: #070b14;
+      --bg-surface: #0d1527;
+      --bg-card: rgba(16, 26, 48, 0.9);
+      --bg-card-hover: rgba(22, 36, 66, 0.95);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-glow: rgba(99, 102, 241, 0.25);
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-faint: #64748b;
+      --primary: #6366f1;
+      --primary-light: #818cf8;
+      --cyan: #06b6d4;
+      --emerald: #10b981;
+      --amber: #f59e0b;
+      --orange: #f97316;
+      --rose: #ef4444;
+      --india-saffron: #ff9933;
+      --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 15% 10%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 30%, rgba(6, 182, 212, 0.06) 0%, transparent 45%),
+        radial-gradient(circle at 50% 90%, rgba(249, 115, 22, 0.05) 0%, transparent 50%);
+    }
+
+    /* Top Tricolor Accent Line */
+    .tricolor-stripe {
+      height: 4px;
+      width: 100%;
+      background: linear-gradient(90deg, #ff9933 0%, #ffffff 50%, #138808 100%);
+      position: sticky;
+      top: 0;
+      z-index: 1001;
+    }
+
+    /* Header & Navigation */
+    header {
+      background: rgba(13, 21, 39, 0.9);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-subtle);
+      position: sticky;
+      top: 4px;
+      z-index: 1000;
+      padding: 14px 4%;
+    }
+
+    .nav-container {
+      max-width: 1440px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+
+    .brand-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #4f46e5, #06b6d4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 18px rgba(99, 102, 241, 0.35);
+    }
+
+    .brand-icon svg { width: 24px; height: 24px; fill: white; }
+
+    .brand-text h1 {
+      font-family: var(--font-heading);
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      background: linear-gradient(90deg, #ffffff 40%, #a5b4fc 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-text p {
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+    }
+
+    .nav-links {
+      display: flex;
+      background: rgba(7, 11, 20, 0.6);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 4px;
+      gap: 4px;
+    }
+
+    .nav-link-btn {
+      color: var(--text-muted);
+      padding: 9px 18px;
+      border-radius: 8px;
+      font-family: var(--font-heading);
+      font-size: 13.5px;
+      font-weight: 600;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .nav-link-btn:hover, .nav-link-btn.active {
+      color: #ffffff;
+      background: linear-gradient(135deg, #4f46e5, #3730a3);
+      box-shadow: 0 3px 12px rgba(79, 70, 229, 0.35);
+    }
+
+    .nav-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      color: #34d399;
+      font-weight: 600;
+    }
+
+    .nav-badge .pulse {
+      width: 7px;
+      height: 7px;
+      background-color: #10b981;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #10b981;
+      animation: pulseAnim 2s infinite;
+    }
+
+    @keyframes pulseAnim {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { transform: scale(1.05); box-shadow: 0 0 0 7px rgba(16, 185, 129, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    /* Main Container */
+    main {
+      flex: 1;
+      max-width: 1440px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px 4% 60px;
+    }
+
+    /* KPI Summary Row */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      backdrop-filter: blur(12px);
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .kpi-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--border-glow);
+    }
+
+    .kpi-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .kpi-icon svg { width: 24px; height: 24px; }
+
+    .kpi-info .kpi-label {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    .kpi-info .kpi-val {
+      font-family: var(--font-heading);
+      font-size: 26px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-top: 2px;
+    }
+
+    .kpi-info .kpi-sub {
+      font-size: 11.5px;
+      color: var(--text-faint);
+      margin-top: 2px;
+    }
+
+    /* Section Headers */
+    .section-header {
+      margin-top: 36px;
+      margin-bottom: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .section-title {
+      font-family: var(--font-heading);
+      font-size: 22px;
+      font-weight: 700;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Power Dashboard Grid (Map + Predictor side-by-side) */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 22px;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .card-title {
+      font-family: var(--font-heading);
+      font-size: 17px;
+      font-weight: 700;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Map Controls & Container */
+    .map-controls-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .map-select {
+      background: #090e1a;
+      border: 1px solid #1e293b;
+      color: #cbd5e1;
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      min-width: 170px;
+    }
+
+    #indiaMap {
+      width: 100%;
+      height: 520px;
+      border-radius: var(--radius-sm);
+      z-index: 10;
+      border: 1px solid var(--border-subtle);
+      background: #090e1a;
+      position: relative;
+    }
+
+    /* Leaflet Dark Filter */
+    .leaflet-container {
+      background: #090e1a !important;
+      font-family: var(--font-body) !important;
+    }
+
+    .dark-map-tiles .leaflet-tile {
+      filter: brightness(0.68) invert(1) contrast(2.5) hue-rotate(205deg) saturate(0.35);
+    }
+
+    .map-legend-bar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 10px 14px;
+      background: rgba(7, 11, 20, 0.75);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11.5px;
+      color: #cbd5e1;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    /* Preset Buttons */
+    .presets-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+      padding: 10px 12px;
+      background: rgba(7, 11, 20, 0.5);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+    }
+
+    .preset-chip {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #cbd5e1;
+      padding: 4px 10px;
+      border-radius: 14px;
+      font-size: 11.5px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-weight: 500;
+    }
+
+    .preset-chip:hover {
+      background: rgba(99, 102, 241, 0.25);
+      border-color: #6366f1;
+      color: #ffffff;
+    }
+
+    /* Form Grid */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #cbd5e1;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    label span.hint {
+      color: var(--text-faint);
+      font-weight: 400;
+      font-size: 11px;
+    }
+
+    input, select {
+      width: 100%;
+      background: #090e1a;
+      border: 1px solid #1e293b;
+      color: #f8fafc;
+      padding: 9px 12px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-body);
+      font-size: 13px;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+
+    .range-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .range-val {
+      min-width: 40px;
+      text-align: right;
+      font-family: var(--font-heading);
+      font-weight: 600;
+      color: var(--cyan);
+      font-size: 13px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #4f46e5, #06b6d4);
+      color: #ffffff;
+      border: none;
+      padding: 13px 20px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-heading);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.25s ease;
+      width: 100%;
+      margin-top: 14px;
+      box-shadow: 0 4px 18px rgba(79, 70, 229, 0.4);
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* INLINE PREDICTION RESULT (Directly below button) */
+    .inline-result-box {
+      margin-top: 14px;
+      background: #090e1a;
+      border: 2px solid #f97316;
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      box-shadow: 0 4px 22px rgba(249, 115, 22, 0.25);
+      animation: popIn 0.3s ease;
+    }
+
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0.97); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .inline-badge-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+
+    .inline-beacon {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #f97316;
+      box-shadow: 0 0 10px #f97316;
+      animation: pulseAnim 1.5s infinite;
+    }
+
+    .inline-severity-pill {
+      font-family: var(--font-heading);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      padding: 4px 12px;
+      border-radius: 12px;
+      background: rgba(249, 115, 22, 0.2);
+      border: 1px solid #f97316;
+      color: #f97316;
+    }
+
+    .inline-risk-metric {
+      margin-left: auto;
+      font-family: var(--font-heading);
+      font-size: 13.5px;
+      font-weight: 700;
+    }
+
+    .inline-title {
+      font-family: var(--font-heading);
+      font-size: 16px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
+
+    .inline-desc {
+      font-size: 12.5px;
+      color: #cbd5e1;
+      line-height: 1.5;
+      margin-bottom: 10px;
+    }
+
+    .inline-tip-box {
+      background: rgba(6, 182, 212, 0.1);
+      border-left: 3px solid var(--cyan);
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #38bdf8;
+    }
+
+    /* 4 Severity Level Indicator Grid */
+    .severity-levels-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .sev-level-box {
+      background: rgba(8, 13, 24, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 8px 4px;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .sev-level-box .sev-lvl-num {
+      font-family: var(--font-heading);
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-faint);
+    }
+
+    .sev-level-box .sev-lvl-lbl {
+      font-size: 10.5px;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+
+    .sev-level-box.active-1 {
+      border-color: #10b981;
+      background: rgba(16, 185, 129, 0.18);
+      box-shadow: 0 0 14px rgba(16, 185, 129, 0.35);
+    }
+    .sev-level-box.active-1 .sev-lvl-num { color: #10b981; }
+
+    .sev-level-box.active-2 {
+      border-color: #f59e0b;
+      background: rgba(245, 158, 11, 0.18);
+      box-shadow: 0 0 14px rgba(245, 158, 11, 0.35);
+    }
+    .sev-level-box.active-2 .sev-lvl-num { color: #f59e0b; }
+
+    .sev-level-box.active-3 {
+      border-color: #f97316;
+      background: rgba(249, 115, 22, 0.22);
+      box-shadow: 0 0 16px rgba(249, 115, 22, 0.4);
+    }
+    .sev-level-box.active-3 .sev-lvl-num { color: #f97316; }
+
+    .sev-level-box.active-4 {
+      border-color: #ef4444;
+      background: rgba(239, 68, 68, 0.25);
+      box-shadow: 0 0 18px rgba(239, 68, 68, 0.5);
+    }
+    .sev-level-box.active-4 .sev-lvl-num { color: #ef4444; }
+
+    /* Analytics Grid */
+    .grid-equal {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    /* Table Styles */
+    .table-responsive {
+      overflow-x: auto;
+      margin-top: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      text-align: left;
+    }
+
+    th {
+      background: rgba(14, 23, 42, 0.9);
+      color: var(--text-muted);
+      font-family: var(--font-heading);
+      font-size: 11.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: #cbd5e1;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+      color: #ffffff;
+    }
+
+    .badge-pill {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    /* Safety Protocol Lists */
+    .advice-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .advice-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 12.5px;
+      color: #e2e8f0;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 9px 12px;
+      border-radius: 8px;
+    }
+
+    .advice-item svg {
+      width: 16px;
+      height: 16px;
+      fill: var(--emerald);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    /* Helplines Grid */
+    .helplines-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .helpline-card {
+      background: rgba(14, 23, 42, 0.85);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .helpline-name {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .helpline-num {
+      font-family: var(--font-heading);
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--cyan);
+    }
+
+    /* Leaflet Popup Styling */
+    .leaflet-popup-content-wrapper {
+      background: rgba(13, 21, 39, 0.95) !important;
+      color: #ffffff !important;
+      border: 1px solid rgba(99, 102, 241, 0.35) !important;
+      backdrop-filter: blur(12px) !important;
+      border-radius: 12px !important;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6) !important;
+    }
+
+    .leaflet-popup-tip {
+      background: rgba(13, 21, 39, 0.95) !important;
+    }
+
+    .leaflet-popup-content {
+      margin: 14px !important;
+      line-height: 1.5 !important;
+    }
+
+    .popup-title {
+      font-family: var(--font-heading);
+      font-size: 15px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 2px;
+    }
+
+    .popup-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .popup-stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-bottom: 10px;
+      font-size: 11.5px;
+    }
+
+    .popup-stat-item {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+
+    .popup-btn {
+      display: block;
+      width: 100%;
+      background: linear-gradient(135deg, #4f46e5, #06b6d4);
+      color: white;
+      text-align: center;
+      padding: 7px 12px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      border: none;
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border-subtle);
+      background: #060911;
+      padding: 24px 4%;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-faint);
+    }
+
+    footer a { color: var(--cyan); text-decoration: none; }
+
+    /* Responsive */
+    @media (max-width: 1100px) {
+      .kpi-row { grid-template-columns: repeat(2, 1fr); }
+      .dashboard-grid { grid-template-columns: 1fr; }
+      .grid-equal { grid-template-columns: 1fr; }
+      .helplines-grid { grid-template-columns: repeat(2, 1fr); }
+      #indiaMap { height: 460px; }
+    }
+
+    @media (max-width: 640px) {
+      .kpi-row { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
+      .helplines-grid { grid-template-columns: 1fr; }
+      #indiaMap { height: 380px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Tricolor Accent Line -->
+  <div class="tricolor-stripe"></div>
+
+  <!-- Header -->
+  <header>
+    <div class="nav-container">
+      <a href="#" class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"/></svg>
+        </div>
+        <div class="brand-text">
+          <h1>SurakshaAI India</h1>
+          <p>National Accident Prediction &amp; Prevention Intelligence</p>
+        </div>
+      </a>
+
+      <!-- Quick Nav Links -->
+      <nav class="nav-links">
+        <a href="#map-section" class="nav-link-btn active">
+          🗺️ India Map &amp; Predictor
+        </a>
+        <a href="#analytics-section" class="nav-link-btn">
+          📊 Corridor Analytics
+        </a>
+        <a href="#safety-section" class="nav-link-btn">
+          ⚠️ Safety Protocols
+        </a>
+      </nav>
+
+      <div class="nav-badge">
+        <span class="pulse"></span>
+        <span id="badgeRecords">4,500 Indian Records Loaded</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main>
+
+    <!-- Top KPI Metrics Row -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-icon" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">
+          <svg fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/></svg>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-label">Incidents Catalogued</div>
+          <div class="kpi-val" id="kpiTotal">4,500</div>
+          <div class="kpi-sub">Across 10 Indian Metros &amp; Highways</div>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24;">
+          <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-label">Mean Recorded Severity</div>
+          <div class="kpi-val" id="kpiSeverity">2.41 <span style="font-size:14px;color:var(--text-faint);">/ 4.0</span></div>
+          <div class="kpi-sub">Baseline ML Severity Index</div>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon" style="background: rgba(239, 68, 68, 0.15); color: #f87171;">
+          <svg fill="currentColor" viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-label">High Severity Corridors</div>
+          <div class="kpi-val" id="kpiHighSev">35.9%</div>
+          <div class="kpi-sub">Severity 3 &amp; 4 (Trauma / Rollovers)</div>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon" style="background: rgba(6, 182, 212, 0.15); color: #22d3ee;">
+          <svg fill="currentColor" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+        </div>
+        <div class="kpi-info">
+          <div class="kpi-label">Peak Crash Window</div>
+          <div class="kpi-val" id="kpiPeakHour">19:00 IST</div>
+          <div class="kpi-sub">18:00 – 22:00 Evening Rush</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================
+         SECTION 1: 🗺️ INDIAN MAP & AI RISK PREDICTOR (SIDE BY SIDE)
+         ======================================================== -->
+    <div id="map-section">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">
+            <svg width="22" height="22" fill="var(--india-saffron)" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+            Interactive Pan-India Accident Map &amp; Real-Time Risk Simulator
+          </h2>
+          <p class="section-desc">
+            Explore accident blackspots across India. Click any marker or point on the map to autofill coordinates into the AI Risk Simulator.
+          </p>
+        </div>
+      </div>
+
+      <div class="dashboard-grid">
+        <!-- LEFT COLUMN: LEAFLET INDIAN MAP (Prominently Visible) -->
+        <div class="card" style="display:flex; flex-direction:column;">
+          <div class="card-header">
+            <h3 class="card-title">
+              <span style="color:var(--india-saffron);">🇮🇳</span> Pan-India Accident Hotspot Map
+            </h3>
+            <div class="map-controls-row">
+              <select id="mapCityFilter" class="map-select" onchange="filterMapByCity(this.value)">
+                <option value="ALL">All Indian Regions (Pan-India)</option>
+              </select>
+
+              <select id="mapSeverityFilter" class="map-select" onchange="filterMapBySeverity(this.value)">
+                <option value="ALL">All Severity Levels (1 to 4)</option>
+                <option value="4">Severity 4 (Critical Fatal)</option>
+                <option value="3">Severity 3 (Severe Trauma)</option>
+                <option value="2">Severity 2 (Moderate Stoppage)</option>
+                <option value="1">Severity 1 (Minor Impact)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- THE MAP CANVAS -->
+          <div id="indiaMap"></div>
+
+          <!-- Map Legend -->
+          <div class="map-legend-bar">
+            <div class="legend-item">
+              <div class="legend-dot" style="background:#10b981; box-shadow:0 0 6px #10b981;"></div>
+              <span>Severity 1: Minor</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:#f59e0b; box-shadow:0 0 6px #f59e0b;"></div>
+              <span>Severity 2: Moderate</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:#f97316; box-shadow:0 0 6px #f97316;"></div>
+              <span>Severity 3: Severe Trauma</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:#ef4444; box-shadow:0 0 8px #ef4444;"></div>
+              <span>Severity 4: Critical Fatal</span>
+            </div>
+            <div class="legend-item" style="margin-left:auto; color:var(--text-faint);">
+              💡 Click any point on India to pick coordinates!
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN: AI RISK SIMULATOR & PREDICTION RESULTS -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">
+              <svg width="20" height="20" fill="var(--cyan)" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+              AI Severity Predictor
+            </h3>
+          </div>
+
+          <!-- Presets -->
+          <div class="presets-bar">
+            <span style="font-size:11.5px;color:var(--text-muted);font-weight:600;">Presets:</span>
+            <button type="button" class="preset-chip" onclick="applyPreset(28.7360, 77.1620, 'New Delhi / NCR', 'Arterial Road', 'Rain', 19, 7)">Delhi Outer Ring</button>
+            <button type="button" class="preset-chip" onclick="applyPreset(18.7720, 73.3420, 'Mumbai MMR', 'Expressway', 'Fog', 3, 1)">Mumbai-Pune Expy</button>
+            <button type="button" class="preset-chip" onclick="applyPreset(12.9175, 77.6235, 'Bengaluru', 'Arterial Road', 'Clear', 18, 5)">Silk Board BLR</button>
+            <button type="button" class="preset-chip" onclick="applyPreset(28.3240, 77.5310, 'New Delhi / NCR', 'Expressway', 'Fog', 4, 12)">Yamuna Expy</button>
+            <button type="button" class="preset-chip" onclick="applyPreset(12.9240, 80.1280, 'Chennai', 'National Highway', 'Rain', 20, 11)">Chennai GST Rd</button>
+            <button type="button" class="preset-chip" onclick="applyPreset(17.4350, 78.3440, 'Hyderabad', 'Expressway', 'Clear', 21, 4)">Hyderabad ORR</button>
+          </div>
+
+          <form id="predictionForm">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="lat">Latitude <span class="hint">(e.g. 28.6139)</span></label>
+                <input id="lat" type="number" step="any" value="28.6139" required>
+              </div>
+
+              <div class="form-group">
+                <label for="lng">Longitude <span class="hint">(e.g. 77.2090)</span></label>
+                <input id="lng" type="number" step="any" value="77.2090" required>
+              </div>
+
+              <div class="form-group">
+                <label for="roadType">Road Type</label>
+                <select id="roadType">
+                  <option value="Expressway" selected>Access-Controlled Expressway</option>
+                  <option value="National Highway">National Highway (NH)</option>
+                  <option value="State Highway">State Highway (SH)</option>
+                  <option value="Arterial Road">Urban Arterial / Ring Road</option>
+                  <option value="Flyover">Elevated Flyover / Bridge</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="vehicleType">Vehicle</label>
+                <select id="vehicleType">
+                  <option value="Four-Wheeler / Car" selected>Car / SUV / Passenger Vehicle</option>
+                  <option value="Two-Wheeler">Two-Wheeler (Bike / Scooter)</option>
+                  <option value="Heavy Commercial / Truck">Heavy Commercial / Multi-Axle Truck</option>
+                  <option value="Bus">Interstate Bus / Transit</option>
+                  <option value="Auto-Rickshaw">Auto-Rickshaw / 3-Wheeler</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="hour">Hour: <span id="hourVal" class="range-val" style="font-size:12px;">19:00</span></label>
+                <input id="hour" type="range" min="0" max="23" value="19" oninput="updateHourDisplay(this.value)">
+              </div>
+
+              <div class="form-group">
+                <label for="weather">Atmospheric Weather</label>
+                <select id="weather">
+                  <option value="Clear">Clear Skies / Normal Daylight</option>
+                  <option value="Rain" selected>Monsoon Rain / Wet Tarmac</option>
+                  <option value="Fog">Dense Fog / Winter Smog</option>
+                  <option value="Haze">Urban Smog / Ambient Haze</option>
+                  <option value="Thunderstorm">Thunderstorm &amp; Severe Wind</option>
+                  <option value="Cloudy">Overcast / Cloudy</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="month">Season</label>
+                <select id="month">
+                  <option value="7" selected>July (Monsoon Peak)</option>
+                  <option value="8">August (Heavy Monsoon)</option>
+                  <option value="12">December (Dense Winter Fog)</option>
+                  <option value="1">January (Cold Radiation Fog)</option>
+                  <option value="5">May (Peak Summer Heat)</option>
+                  <option value="10">October (Autumn)</option>
+                  <option value="3">March (Spring)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="visibility">Visibility (mi)</label>
+                <input id="visibility" type="number" step="0.1" min="0.1" max="15.0" value="3.5" required>
+              </div>
+
+              <input id="temp" type="hidden" value="84.0">
+              <input id="humidity" type="hidden" value="78">
+            </div>
+
+            <button type="submit" class="btn-primary" id="btnPredict">
+              <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+              Run AI Severity &amp; Risk Assessment
+            </button>
+          </form>
+
+          <!-- INLINE RESULT BANNER: Visibly rendered immediately under button -->
+          <div id="inlineResultBox" class="inline-result-box">
+            <div class="inline-badge-row">
+              <div class="inline-beacon" id="inlineBeacon"></div>
+              <span id="inlineSeverityBadge" class="inline-severity-pill">PREDICTED SEVERITY: LEVEL 3</span>
+              <span id="inlineRiskPct" class="inline-risk-metric" style="color:#f97316;">Risk Index: 85%</span>
+            </div>
+            <div id="inlineTitle" class="inline-title">Severity 3: Serious Hazard / Major Trauma Risk</div>
+            <div id="inlineDesc" class="inline-desc">High kinetic collision with substantial cabin deformation, multi-vehicle entrapment, and mandatory paramedic deployment.</div>
+            
+            <!-- 4 Severity Level Indicator Grid -->
+            <div class="severity-levels-grid">
+              <div class="sev-level-box" id="sevLevel1">
+                <div class="sev-lvl-num">1</div>
+                <div class="sev-lvl-lbl">Minor</div>
+              </div>
+              <div class="sev-level-box" id="sevLevel2">
+                <div class="sev-lvl-num">2</div>
+                <div class="sev-lvl-lbl">Moderate</div>
+              </div>
+              <div class="sev-level-box active-3" id="sevLevel3">
+                <div class="sev-lvl-num">3</div>
+                <div class="sev-lvl-lbl">Severe</div>
+              </div>
+              <div class="sev-level-box" id="sevLevel4">
+                <div class="sev-lvl-num">4</div>
+                <div class="sev-lvl-lbl">Critical</div>
+              </div>
+            </div>
+
+            <div id="inlineTip" class="inline-tip-box" style="margin-top:10px;">
+              <strong>💡 Actionable Tip:</strong> <span id="inlineTipText">Double your following distance to at least 4 car lengths to prevent hydroplaning skids.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================
+         SECTION 2: 📊 PAN-INDIA CORRIDOR ANALYTICS
+         ======================================================== -->
+    <div id="analytics-section">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">
+            <svg width="22" height="22" fill="var(--primary-light)" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+            Pan-India Corridor Analytics &amp; Crash Patterns
+          </h2>
+          <p class="section-desc">24-hour crash profiles, seasonal monsoon/fog spikes, severity distribution, and top accident blackspots.</p>
+        </div>
+      </div>
+
+      <div class="grid-equal" style="margin-bottom: 20px;">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Hourly Collision Distribution (IST)</h3>
+          </div>
+          <div style="height: 270px; position: relative;">
+            <canvas id="chartHourly"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Severity Class Breakdown</h3>
+          </div>
+          <div style="height: 270px; position: relative;">
+            <canvas id="chartSeverity"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Monthly Seasonality &amp; Weather Impacts</h3>
+          </div>
+          <div style="height: 270px; position: relative;">
+            <canvas id="chartMonthly"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Crash Incidents by Road Type</h3>
+          </div>
+          <div style="height: 270px; position: relative;">
+            <canvas id="chartRoadType"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Corridors Table -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">
+            <svg width="20" height="20" fill="var(--rose)" viewBox="0 0 24 24"><path d="M12 2L1 21h22L12 2zm1 14h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+            Top High-Risk Blackspot Corridors in India
+          </h3>
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Corridor Name</th>
+                <th>Region / State</th>
+                <th>Classification</th>
+                <th>Recorded Crashes</th>
+                <th>Mean Severity</th>
+                <th>Dominant Hazard Factor</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="corridorsTableBody">
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================
+         SECTION 3: ⚠️ INDIAN ROAD SAFETY PROTOCOLS
+         ======================================================== -->
+    <div id="safety-section">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">
+            <svg width="22" height="22" fill="var(--emerald)" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+            Indian Road Safety Protocols &amp; Defensive Guidelines
+          </h2>
+          <p class="section-desc">Key protocols based on Ministry of Road Transport and Highways (MoRTH) standards.</p>
+        </div>
+      </div>
+
+      <div class="grid-equal">
+        <div class="card">
+          <h3 class="card-title" style="color:var(--cyan); margin-bottom:12px;">🌧️ Monsoon Hydroplaning &amp; Wet Tarmac</h3>
+          <ul class="advice-list">
+            <li class="advice-item">
+              <svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+              <strong>Tyre Tread Depth:</strong> Ensure minimum 3.0 mm tread depth. Worn tyres lose steering contact over standing water at speeds &gt; 65 km/h.
+            </li>
+            <li class="advice-item">
+              <svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+              <strong>Do Not Brake Harshly:</strong> If your vehicle begins to slide, ease off the accelerator smoothly; do not slam the brake pedal.
+            </li>
+            <li class="advice-item">
+              <svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+              <strong>Avoid Flooded Underpasses:</strong> In major metros, underpasses can flood rapidly during cloudbursts causing engine hydraulic lock.
+            </li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title" style="color:var(--amber); margin-bottom:12px;">🌫️ North India Dense Winter Fog Protocols</h3>
+          <ul class="advice-list">
+            <li class="advice-item">
+              <svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+              <strong>Never Use High Beams:</strong> High-beam rays reflect off airborne moisture particles, blinding the driver. Use low-beams and dedicated amber fog lights.
+            </li>
+            <li class="advice-item">
+              <svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+              <strong>Strictly No Shoulder Parking:</strong> Disoriented vehicles following road borders will ram into stationary vehicles parked on highway shoulders.
+            </li>
+            <li class="advice-item">
+              <svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+              <strong>Follow Lane Markers:</strong> Track the reflective white painted lines and cats-eye studs on the left side of your lane.
+            </li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title" style="color:var(--india-saffron); margin-bottom:12px;">🏍️ Two-Wheeler Defensive Riding</h3>
+          <ul class="advice-list">
+            <li class="advice-item">
+              <svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+              <strong>ISI Full-Face Helmet:</strong> Wear a genuine ISI / DOT certified full-face helmet with strapped buckle.
+            </li>
+            <li class="advice-item">
+              <svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+              <strong>Heavy Truck Blind Spots:</strong> Stay out of the blind zones directly in front of truck cabins and beside passenger doors.
+            </li>
+            <li class="advice-item">
+              <svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+              <strong>High-Visibility Neon:</strong> Wear reflective straps or fluorescent jackets when commuting at dusk or dawn.
+            </li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title" style="color:var(--emerald); margin-bottom:12px;">🛣️ Modern Expressway Lane Etiquette</h3>
+          <ul class="advice-list">
+            <li class="advice-item">
+              <svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+              <strong>Right Lane is Only for Overtaking:</strong> Cruising in the fast right lane forces dangerous left-side passing maneuvers. Return to center lane once clear.
+            </li>
+            <li class="advice-item">
+              <svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+              <strong>No Reversing on Exits:</strong> If you miss an expressway toll exit, proceed safely to the next interchange. Never reverse.
+            </li>
+            <li class="advice-item">
+              <svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+              <strong>Mandatory Seatbelts All Seats:</strong> Unbuckled rear passengers in 100 km/h impacts frequently cause fatal trauma to front passengers.
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Emergency Helplines -->
+      <div class="helplines-grid">
+        <div class="helpline-card">
+          <span class="helpline-name">National Emergency Service</span>
+          <span class="helpline-num">112</span>
+        </div>
+        <div class="helpline-card">
+          <span class="helpline-name">NHAI Highway SOS</span>
+          <span class="helpline-num">1033</span>
+        </div>
+        <div class="helpline-card">
+          <span class="helpline-name">Medical / Ambulance</span>
+          <span class="helpline-num">108</span>
+        </div>
+        <div class="helpline-card">
+          <span class="helpline-name">Traffic Police Helpline</span>
+          <span class="helpline-num">1095 / 103</span>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div style="max-width: 1200px; margin: 0 auto;">
+      <p style="margin-bottom: 8px;">
+        <strong>SurakshaAI India</strong> — Pan-India Road Safety Intelligence Platform · Machine Learning Severity Classification &amp; Hotspot Diagnostics
+      </p>
+      <p style="color: #64748b; font-size: 11px;">
+        Data modeled after Ministry of Road Transport and Highways (MoRTH) accident characteristics. Map tiles &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>.
+      </p>
+    </div>
+  </footer>
+
+  <!-- Leaflet & Chart.js CDNs -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Application Logic -->
+  <script>
+    let leafletMap = null;
+    let mapMarkersLayer = null;
+    let allHotspots = [];
+    let allCities = [];
+    let chartsInitialized = false;
+    let chartInstances = {};
+
+    function updateHourDisplay(val) {
+      const h = parseInt(val);
+      const str = (h < 10 ? '0' : '') + h + ':00';
+      document.getElementById('hourVal').textContent = str;
+    }
+
+    function applyPreset(lat, lng, city, roadType, weather, hour, month) {
+      document.getElementById('lat').value = lat;
+      document.getElementById('lng').value = lng;
+      document.getElementById('roadType').value = roadType;
+      document.getElementById('weather').value = weather;
+      document.getElementById('hour').value = hour;
+      updateHourDisplay(hour);
+      document.getElementById('month').value = month;
+
+      if (weather === 'Fog') document.getElementById('visibility').value = 0.6;
+      else if (weather === 'Rain') document.getElementById('visibility').value = 3.0;
+      else document.getElementById('visibility').value = 8.5;
+
+      if (leafletMap) {
+        leafletMap.setView([lat, lng], 11);
+      }
+
+      runPrediction();
+    }
+
+    function initMap() {
+      const mapEl = document.getElementById('indiaMap');
+      if (!mapEl) return;
+
+      // Centered on India: [21.5, 78.9], zoom level 5
+      leafletMap = L.map('indiaMap', {
+        center: [21.5, 78.9],
+        zoom: 5,
+        minZoom: 4,
+        maxZoom: 18,
+        scrollWheelZoom: true
+      });
+
+      // Reliable OpenStreetMap tiles with dark CSS filter
+      const osmTiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>',
+        className: 'dark-map-tiles'
+      });
+      osmTiles.addTo(leafletMap);
+
+      mapMarkersLayer = L.layerGroup().addTo(leafletMap);
+
+      leafletMap.on('click', function(e) {
+        const clickedLat = e.latlng.lat.toFixed(6);
+        const clickedLng = e.latlng.lng.toFixed(6);
+        
+        L.popup()
+          .setLatLng(e.latlng)
+          .setContent(`
+            <div style="font-size:12px;">
+              <b>Selected Location:</b><br>
+              Lat: ${clickedLat}, Lng: ${clickedLng}<br><br>
+              <button class="popup-btn" onclick="useMapCoordinates(${clickedLat}, ${clickedLng})">
+                Use for AI Prediction
+              </button>
+            </div>
+          `)
+          .openOn(leafletMap);
+      });
+
+      // Force recalculation of container size after DOM ready
+      setTimeout(() => {
+        leafletMap.invalidateSize();
+      }, 250);
+    }
+
+    function useMapCoordinates(lat, lng) {
+      document.getElementById('lat').value = lat;
+      document.getElementById('lng').value = lng;
+      leafletMap.closePopup();
+      runPrediction();
+    }
+
+    function getSeverityColor(sev) {
+      const rounded = Math.round(sev);
+      if (rounded >= 4) return '#ef4444';
+      if (rounded === 3) return '#f97316';
+      if (rounded === 2) return '#f59e0b';
+      return '#10b981';
+    }
+
+    function renderMarkers(hotspots) {
+      if (!mapMarkersLayer) return;
+      mapMarkersLayer.clearLayers();
+
+      hotspots.forEach(p => {
+        const color = getSeverityColor(p.severity);
+        const radius = 6 + Math.min(p.count * 1.5, 12);
+
+        const circle = L.circleMarker([p.lat, p.lng], {
+          radius: radius,
+          fillColor: color,
+          color: '#ffffff',
+          weight: 1.5,
+          opacity: 0.85,
+          fillOpacity: 0.75
+        });
+
+        const popupContent = `
+          <div class="popup-title">${p.corridor || p.city}</div>
+          <div class="popup-meta">${p.city} · ${p.road_type || 'Corridor'}</div>
+          <div class="popup-stat-grid">
+            <div class="popup-stat-item"><b>Incidents:</b> ${p.count}</div>
+            <div class="popup-stat-item"><b>Avg Severity:</b> <span style="color:${color};font-weight:700;">${p.severity.toFixed(2)} / 4</span></div>
+          </div>
+          <div style="font-size:11px;color:#94a3b8;margin-bottom:8px;">
+            <b>Hazard:</b> ${p.primary_cause || 'Heavy traffic flow'}
+          </div>
+          <button class="popup-btn" onclick="applyPreset(${p.lat}, ${p.lng}, '${p.city}', '${p.road_type || 'Arterial Road'}', 'Rain', 19, 7)">
+            Simulate Risk at this Blackspot
+          </button>
+        `;
+
+        circle.bindPopup(popupContent);
+        mapMarkersLayer.addLayer(circle);
+      });
+    }
+
+    function filterMapByCity(cityName) {
+      if (!cityName || cityName === 'ALL') {
+        renderMarkers(allHotspots);
+        leafletMap.setView([21.5, 78.9], 5);
+        return;
+      }
+      const filtered = allHotspots.filter(h => h.city === cityName);
+      renderMarkers(filtered);
+
+      const cityObj = allCities.find(c => c.City === cityName);
+      if (cityObj) {
+        leafletMap.setView([cityObj.lat, cityObj.lng], 11);
+      } else if (filtered.length > 0) {
+        leafletMap.setView([filtered[0].lat, filtered[0].lng], 11);
+      }
+    }
+
+    function filterMapBySeverity(sevVal) {
+      const cityFilter = document.getElementById('mapCityFilter').value;
+      let dataset = allHotspots;
+      if (cityFilter && cityFilter !== 'ALL') {
+        dataset = dataset.filter(h => h.city === cityFilter);
+      }
+      if (sevVal !== 'ALL') {
+        const targetSev = parseInt(sevVal);
+        dataset = dataset.filter(h => Math.round(h.severity) === targetSev);
+      }
+      renderMarkers(dataset);
+    }
+
+    async function loadSummary() {
+      try {
+        const res = await fetch('/api/summary');
+        const data = await res.json();
+
+        document.getElementById('kpiTotal').textContent = data.total_records.toLocaleString('en-IN');
+        document.getElementById('badgeRecords').textContent = `${data.total_records.toLocaleString('en-IN')} Indian Records Loaded`;
+        document.getElementById('kpiSeverity').innerHTML = `${data.mean_severity} <span style="font-size:14px;color:var(--text-faint);">/ 4.0</span>`;
+        document.getElementById('kpiHighSev').textContent = `${data.high_severity_pct}%`;
+        document.getElementById('kpiPeakHour').textContent = `${data.peak_hour}:00 IST`;
+
+        allHotspots = data.hotspots || [];
+        allCities = data.cities || [];
+
+        const citySelect = document.getElementById('mapCityFilter');
+        citySelect.innerHTML = '<option value="ALL">All Indian Regions (Pan-India)</option>';
+        allCities.forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c.City;
+          opt.textContent = `${c.City} (${c.count} records)`;
+          citySelect.appendChild(opt);
+        });
+
+        renderMarkers(allHotspots);
+      } catch (err) {
+        console.error('Failed to load summary:', err);
+      }
+    }
+
+    async function loadAnalytics() {
+      try {
+        const res = await fetch('/api/analytics');
+        const data = await res.json();
+
+        renderCharts(data);
+        renderCorridorsTable(data.top_corridors || []);
+        chartsInitialized = true;
+      } catch (err) {
+        console.error('Failed to load analytics:', err);
+      }
+    }
+
+    function renderCharts(data) {
+      Chart.defaults.color = '#94a3b8';
+      Chart.defaults.font.family = "'Inter', sans-serif";
+
+      const ctxHourly = document.getElementById('chartHourly').getContext('2d');
+      const gradientHourly = ctxHourly.createLinearGradient(0, 0, 0, 260);
+      gradientHourly.addColorStop(0, 'rgba(99, 102, 241, 0.45)');
+      gradientHourly.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
+
+      chartInstances.hourly = new Chart(ctxHourly, {
+        type: 'line',
+        data: {
+          labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+          datasets: [{
+            label: 'Incident Volume',
+            data: data.hourly || [],
+            borderColor: '#6366f1',
+            backgroundColor: gradientHourly,
+            fill: true,
+            tension: 0.35,
+            borderWidth: 2.5,
+            pointBackgroundColor: '#818cf8',
+            pointRadius: 3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: 'rgba(255,255,255,0.04)' } },
+            y: { grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }
+          }
+        }
+      });
+
+      const ctxSev = document.getElementById('chartSeverity').getContext('2d');
+      const sevData = data.severity || {};
+      chartInstances.severity = new Chart(ctxSev, {
+        type: 'doughnut',
+        data: {
+          labels: ['Severity 1 (Minor)', 'Severity 2 (Moderate)', 'Severity 3 (Severe Trauma)', 'Severity 4 (Critical/Fatal)'],
+          datasets: [{
+            data: [sevData['1'] || 0, sevData['2'] || 0, sevData['3'] || 0, sevData['4'] || 0],
+            backgroundColor: ['#10b981', '#f59e0b', '#f97316', '#ef4444'],
+            borderWidth: 0,
+            hoverOffset: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12, font: { size: 11 } } }
+          },
+          cutout: '68%'
+        }
+      });
+
+      const ctxMonthly = document.getElementById('chartMonthly').getContext('2d');
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      chartInstances.monthly = new Chart(ctxMonthly, {
+        type: 'bar',
+        data: {
+          labels: months,
+          datasets: [{
+            label: 'Recorded Crashes',
+            data: data.monthly || [],
+            backgroundColor: (ctx) => {
+              const idx = ctx.dataIndex;
+              if (idx === 6 || idx === 7) return 'rgba(6, 182, 212, 0.8)';
+              if (idx === 0 || idx === 11) return 'rgba(249, 115, 22, 0.8)';
+              return 'rgba(99, 102, 241, 0.65)';
+            },
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false } },
+            y: { grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }
+          }
+        }
+      });
+
+      const ctxRoad = document.getElementById('chartRoadType').getContext('2d');
+      const roadData = data.road_type || {};
+      chartInstances.roadType = new Chart(ctxRoad, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(roadData),
+          datasets: [{
+            data: Object.values(roadData),
+            backgroundColor: ['#6366f1', '#06b6d4', '#10b981', '#f59e0b', '#ec4899'],
+            borderRadius: 6
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: 'rgba(255,255,255,0.04)' } },
+            y: { grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    function renderCorridorsTable(corridors) {
+      const tbody = document.getElementById('corridorsTableBody');
+      tbody.innerHTML = '';
+
+      corridors.forEach(c => {
+        const color = getSeverityColor(c.avg_severity);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${c.name}</strong></td>
+          <td>${c.city}</td>
+          <td><span class="badge-pill" style="background:rgba(99,102,241,0.15);color:#818cf8;">${c.road_type}</span></td>
+          <td>${c.count}</td>
+          <td><span style="color:${color};font-weight:700;">${c.avg_severity.toFixed(2)}</span></td>
+          <td><span style="color:#f87171;font-size:12px;">⚠️ ${c.primary_cause}</span></td>
+          <td>
+            <button class="preset-chip" onclick="applyPreset(28.6, 77.2, '${c.city}', '${c.road_type}', 'Rain', 19, 7)">
+              Analyze
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Prediction Function
+    async function runPrediction() {
+      const btn = document.getElementById('btnPredict');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '⏳ Computing AI Safety Assessment…';
+      btn.disabled = true;
+
+      let latVal = parseFloat(document.getElementById('lat').value);
+      let lngVal = parseFloat(document.getElementById('lng').value);
+      if (isNaN(latVal) || isNaN(lngVal) || (latVal > 35 && lngVal < 0)) {
+        latVal = 28.6139;
+        lngVal = 77.2090;
+        document.getElementById('lat').value = latVal;
+        document.getElementById('lng').value = lngVal;
+      }
+
+      const payload = {
+        latitude: latVal,
+        longitude: lngVal,
+        road_type: document.getElementById('roadType').value,
+        vehicle_type: document.getElementById('vehicleType').value,
+        hour: parseInt(document.getElementById('hour').value),
+        month: parseInt(document.getElementById('month').value),
+        weather_condition: document.getElementById('weather').value,
+        visibility_mi: Math.max(0.1, parseFloat(document.getElementById('visibility').value) || 3.5),
+        temperature_f: parseFloat(document.getElementById('temp').value) || 84.0,
+        humidity: Math.min(100, Math.max(10, parseFloat(document.getElementById('humidity').value) || 75))
+      };
+
+      try {
+        const res = await fetch('/api/predict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const errData = await res.json();
+          let msg = 'Prediction failed';
+          if (typeof errData.detail === 'string') msg = errData.detail;
+          else if (Array.isArray(errData.detail)) msg = errData.detail.map(d => `${d.loc ? d.loc.slice(-1) : ''}: ${d.msg}`).join(', ');
+          throw new Error(msg);
+        }
+
+        const data = await res.json();
+
+        // 1. Update Inline Result Box
+        const inlineBox = document.getElementById('inlineResultBox');
+        inlineBox.style.display = 'block';
+        inlineBox.style.borderColor = data.risk_color;
+        inlineBox.style.boxShadow = `0 4px 22px ${data.badge_bg}`;
+
+        const beacon = document.getElementById('inlineBeacon');
+        beacon.style.background = data.risk_color;
+        beacon.style.boxShadow = `0 0 10px ${data.risk_color}`;
+
+        const sevBadge = document.getElementById('inlineSeverityBadge');
+        sevBadge.textContent = `🎯 PREDICTED: SEVERITY ${data.predicted_severity} OF 4`;
+        sevBadge.style.color = data.risk_color;
+        sevBadge.style.borderColor = data.risk_color;
+        sevBadge.style.background = data.badge_bg;
+
+        const inlineRisk = document.getElementById('inlineRiskPct');
+        inlineRisk.textContent = `Risk Index: ${data.risk_score}% (${data.risk_level})`;
+        inlineRisk.style.color = data.risk_color;
+
+        document.getElementById('inlineTitle').textContent = data.severity_info.title;
+        document.getElementById('inlineDesc').textContent = data.severity_info.desc;
+
+        if (data.prevention_tips && data.prevention_tips.length > 0) {
+          document.getElementById('inlineTipText').textContent = data.prevention_tips[0];
+          document.getElementById('inlineTip').style.display = 'block';
+        }
+
+        // 2. Update 4 Severity Indicator Grid
+        for (let i = 1; i <= 4; i++) {
+          const box = document.getElementById(`sevLevel${i}`);
+          if (box) {
+            box.className = 'sev-level-box' + (i === data.predicted_severity ? ` active-${i}` : '');
+          }
+        }
+
+      } catch (err) {
+        console.error('Prediction Error:', err);
+        const inlineBox = document.getElementById('inlineResultBox');
+        inlineBox.style.display = 'block';
+        inlineBox.style.borderColor = '#ef4444';
+        inlineBox.innerHTML = `
+          <div style="color:#f87171;font-weight:700;margin-bottom:6px;">⚠️ Prediction Notice</div>
+          <div style="color:#cbd5e1;font-size:13px;margin-bottom:10px;">${err.message}</div>
+          <button type="button" class="preset-chip" onclick="applyPreset(28.6139, 77.2090, 'New Delhi / NCR', 'Expressway', 'Rain', 19, 7)">
+            Reset to Delhi NCR Coordinates
+          </button>
+        `;
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    document.getElementById('predictionForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      runPrediction();
+    });
+
+    // Window Resize listener for Leaflet
+    window.addEventListener('resize', () => {
+      if (leafletMap) leafletMap.invalidateSize();
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const latEl = document.getElementById('lat');
+      const lngEl = document.getElementById('lng');
+      if (latEl && lngEl && (parseFloat(latEl.value) > 35 && parseFloat(lngEl.value) < 0)) {
+        latEl.value = '28.6139';
+        lngEl.value = '77.2090';
+      }
+
+      initMap();
+      loadSummary();
+      loadAnalytics();
+      runPrediction();
+    });
+  </script>
+</body>
+</html>
